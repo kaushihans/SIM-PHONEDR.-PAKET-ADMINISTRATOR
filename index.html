@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Paketshop Pro V6</title>
+<title>Paketshop Pro V8</title>
 
 <style>
 body{
@@ -12,7 +12,7 @@ font-family:Arial;
 background:#f4f6f8;
 }
 
-/* START DASHBOARD */
+/* DASHBOARD */
 .dashboard{
 display:grid;
 grid-template-columns:repeat(3,1fr);
@@ -33,16 +33,8 @@ cursor:pointer;
 .gls{background:#0b2a6f;}
 .hermes{background:#4aa3ff;}
 
-.trash{
-font-size:18px;
-opacity:0.9;
-}
-
 /* APP */
-.app{
-display:none;
-padding:10px;
-}
+.app{display:none;padding:10px;}
 
 .header{
 padding:15px;
@@ -50,7 +42,9 @@ color:white;
 font-size:20px;
 font-weight:bold;
 border-radius:8px;
-margin-bottom:10px;
+display:flex;
+justify-content:space-between;
+align-items:center;
 }
 
 .card{
@@ -64,130 +58,50 @@ input,select,button{
 width:100%;
 padding:8px;
 margin:5px 0;
+box-sizing:border-box;
 }
+
+.smallbtn{width:auto;padding:5px 10px;}
+
+.warn{background:#b00000 !important;}
 </style>
 </head>
 
 <body>
 
-<!-- START -->
 <div id="dashboard" class="dashboard">
-
 <div class="box dpd" onclick="openFirma('dpd')">DPD</div>
-
 <div class="box gls" onclick="openFirma('gls')">GLS</div>
-
 <div class="box hermes" onclick="openFirma('hermes')">HERMES</div>
-
 </div>
 
-<!-- APP -->
 <div id="app" class="app">
 
-<div id="header" class="header"></div>
+<div id="header" class="header">
+<span id="title"></span>
+<button onclick="openTrash()">🗑</button>
+</div>
 
 <button onclick="back()">⬅ Zurück</button>
 
-<div id="content"></div>
-
-</div>
-<script>
-
-let currentFirma = null;
-
-/* DATEN */
-let data = JSON.parse(localStorage.getItem("db")) || {
- dpd:{counter:1000,customers:{}},
- gls:{counter:2000,customers:{}},
- hermes:{counter:3000,customers:{}}
-};
-
-function save(){
- localStorage.setItem("db",JSON.stringify(data));
-}
-
-/* FIRMA ÖFFNEN */
-function openFirma(f){
- currentFirma = f;
-
- document.getElementById("dashboard").style.display="none";
- document.getElementById("app").style.display="block";
-
- let names = {
-  dpd:"DPD",
-  gls:"GLS",
-  hermes:"Hermes"
- };
-
- document.getElementById("header").innerText = names[f];
-
- render();
-}
-
-/* ZURÜCK */
-function back(){
- document.getElementById("dashboard").style.display="grid";
- document.getElementById("app").style.display="none";
-}
-
-/* PAKET HINZUFÜGEN */
-function addPackage(){
-
- let name = document.getElementById("name").value.trim();
- if(!name) return;
-
- let f = data[currentFirma];
-
- if(!f.customers[name]){
-  f.customers[name] = {
-   id: f.counter++,
-   packages: [],
-   created: Date.now()
-  };
- }
-
- f.customers[name].packages.push({
-  size: document.getElementById("size").value,
-  form: document.getElementById("form").value,
-  info: document.getElementById("info").value,
-  time: Date.now()
- });
-
- save();
-
- document.getElementById("name").value="";
- document.getElementById("info").value="";
-
- render();
-}
-
-</script>
 <div class="card">
 
-<h3>📦 Neues Paket</h3>
+<h3>📦 Paket hinzufügen</h3>
 
-<input id="search" placeholder="🔍 Suche Name oder ID" oninput="render()">
-
+<input id="search" placeholder="Suche Name / ID" oninput="render()">
 <input id="name" placeholder="Name">
 
 <select id="size">
-<option>XS</option>
-<option>S</option>
-<option>M</option>
-<option>L</option>
-<option>XL</option>
-<option>XXL</option>
+<option>XS</option><option>S</option><option>M</option>
+<option>L</option><option>XL</option><option>XXL</option>
 </select>
 
 <select id="form">
-<option>Paket</option>
-<option>Box</option>
-<option>Tüte</option>
-<option>Lang</option>
-<option>Flach</option>
+<option>Paket</option><option>Box</option>
+<option>Tüte</option><option>Lang</option><option>Flach</option>
 </select>
 
-<input id="info" placeholder="Info (optional)">
+<input id="info" placeholder="Info">
 
 <button onclick="addPackage()">Speichern</button>
 
@@ -197,338 +111,346 @@ function addPackage(){
 
 <div id="list"></div>
 
+</div>
 <script>
 
-/* STATISTIK */
-function getStats(){
+/* ---------------- DATA ---------------- */
 
- let f = data[currentFirma];
+let currentFirma = null;
 
- let customers = Object.keys(f.customers).length;
- let packages = 0;
+let data = JSON.parse(localStorage.getItem("db")) || {
+dpd:{counter:1000,customers:{},trash:[]},
+gls:{counter:2000,customers:{},trash:[]},
+hermes:{counter:3000,customers:{},trash:[]}
+};
 
- for(let n in f.customers){
-  packages += f.customers[n].packages.length;
- }
-
- return `
- 👥 Kunden: ${customers} <br>
- 📦 Pakete: ${packages}
- `;
+function save(){
+localStorage.setItem("db",JSON.stringify(data));
 }
 
-/* RENDER */
+/* ---------------- NAV ---------------- */
+
+function openFirma(f){
+currentFirma = f;
+
+document.getElementById("dashboard").style.display="none";
+document.getElementById("app").style.display="block";
+
+document.getElementById("title").innerText = f.toUpperCase();
+
+render();
+}
+
+function back(){
+document.getElementById("dashboard").style.display="grid";
+document.getElementById("app").style.display="none";
+}
+
+/* ---------------- PACKAGES ---------------- */
+
+let edit = {name:null,index:null};
+
+/* Werktage Start (Hilfsfunktion später erweitert in Teil 3) */
+function addPackage(){
+
+let name = document.getElementById("name").value.trim();
+if(!name) return;
+
+let f = data[currentFirma];
+
+if(!f.customers[name]){
+f.customers[name] = {
+id:f.counter++,
+packages:[]
+};
+}
+
+let pkg = {
+size:document.getElementById("size").value,
+form:document.getElementById("form").value,
+info:document.getElementById("info").value,
+time:Date.now()
+};
+
+if(edit.name !== null){
+f.customers[edit.name].packages[edit.index] = pkg;
+edit = {name:null,index:null};
+} else {
+f.customers[name].packages.push(pkg);
+}
+
+save();
+
+document.getElementById("name").value="";
+document.getElementById("info").value="";
+
+render();
+}
+
+/* ---------------- RENDER ---------------- */
+
 function render(){
 
- let list = document.getElementById("list");
- let stats = document.getElementById("stats");
+let f = data[currentFirma];
+let search = document.getElementById("search").value.toLowerCase();
 
- let f = data[currentFirma];
- let search = document.getElementById("search").value.toLowerCase();
+let list = document.getElementById("list");
+let stats = document.getElementById("stats");
 
- stats.innerHTML = getStats();
+list.innerHTML="";
 
- list.innerHTML = "";
+let customers = f.customers;
 
- for(let name in f.customers){
+let total = 0;
 
-  let c = f.customers[name];
+for(let name in customers){
 
-  if(search &&
-     !name.toLowerCase().includes(search) &&
-     !String(c.id).includes(search)){
-   continue;
-  }
+let c = customers[name];
 
-  let html = `
-  <div class="card">
+if(search &&
+!name.toLowerCase().includes(search) &&
+!String(c.id).includes(search)) continue;
 
-  <h3>${name}</h3>
+total += c.packages.length;
 
-  <b style="font-size:20px">ID ${c.id}</b>
-  <br><br>
-  `;
+let html = `<div class="card">
+<h3>${name}</h3>
+<b>ID ${c.id}</b><br><br>`;
 
-  c.packages.forEach((p,i)=>{
-   html += `
-   <div style="border-left:4px solid #ccc; padding:5px; margin:5px 0;">
-   <b>Paket ${i+1}</b><br>
-   ${p.size} | ${p.form}<br>
-   ${p.info || ""}
-   </div>
-   `;
-  });
+c.packages.forEach((p,i)=>{
+html += `
+<div style="border-left:4px solid #ccc;padding:5px;margin:5px 0;">
+<b>Paket ${i+1}</b><br>
+${p.size} | ${p.form}<br>
+${p.info || ""}
+<br>
+<button class="smallbtn" onclick="editPackage('${name}',${i})">✏</button>
+</div>
+`;
+});
 
-  html += `
-  </div>
-  `;
+html += `
+<button onclick="deleteCustomer('${name}')">🗑 Löschen</button>
+</div>`;
 
-  list.innerHTML += html;
- }
+list.innerHTML += html;
+}
 
+stats.innerHTML = `
+👥 Kunden: ${Object.keys(customers).length}<br>
+📦 Pakete: ${total}
+`;
+}
+
+/* ---------------- EDIT ---------------- */
+
+function editPackage(name,index){
+
+let f = data[currentFirma];
+let p = f.customers[name].packages[index];
+
+document.getElementById("name").value = name;
+document.getElementById("size").value = p.size;
+document.getElementById("form").value = p.form;
+document.getElementById("info").value = p.info;
+
+edit = {name,index};
+}
+
+/* ---------------- DELETE ---------------- */
+
+function deleteCustomer(name){
+
+if(!confirm("In Papierkorb verschieben?")) return;
+
+let f = data[currentFirma];
+
+f.trash.push({
+name,
+data:f.customers[name],
+time:Date.now()
+});
+
+delete f.customers[name];
+
+save();
+render();
 }
 
 </script>
 <script>
 
-let edit = {
- name:null,
- index:null
-};
+/* ---------------- WERKTAGE ---------------- */
 
-/* PAKET SPEICHERN (UPDATE + NEU) */
-function addPackage(){
+function workdays(start){
+let count = 0;
+let d = new Date(start);
 
- let name = document.getElementById("name").value.trim();
- if(!name) return;
+while(d.getTime() < Date.now()){
+let day = d.getDay(); // 0 So, 6 Sa
 
- let f = data[currentFirma];
-
- if(!f.customers[name]){
-  f.customers[name] = {
-   id: f.counter++,
-   packages: [],
-   created: Date.now()
-  };
- }
-
- let pkg = {
-  size: document.getElementById("size").value,
-  form: document.getElementById("form").value,
-  info: document.getElementById("info").value,
-  time: Date.now()
- };
-
- if(edit.name !== null){
-
-  f.customers[edit.name].packages[edit.index] = pkg;
-  edit.name = null;
-  edit.index = null;
-
- } else {
-  f.customers[name].packages.push(pkg);
- }
-
- save();
-
- document.getElementById("name").value = "";
- document.getElementById("info").value = "";
-
- render();
+if(day !== 0 && day !== 6){
+count++;
 }
 
-/* EDIT START */
-function editPackage(name,index){
-
- let f = data[currentFirma];
- let p = f.customers[name].packages[index];
-
- document.getElementById("name").value = name;
- document.getElementById("size").value = p.size;
- document.getElementById("form").value = p.form;
- document.getElementById("info").value = p.info;
-
- edit.name = name;
- edit.index = index;
+d.setDate(d.getDate() + 1);
 }
 
-/* LÖSCHEN → PAPIERKORB */
+return count;
+}
+
+/* STATUS */
+function getStatus(p){
+let days = workdays(p.time);
+
+if(days >= 10) return "red";
+if(days >= 8) return "orange";
+return "green";
+}
+
+/* ---------------- DELETE + TRASH ---------------- */
+
 function deleteCustomer(name){
 
- if(!confirm("Wirklich in Papierkorb verschieben?")) return;
+if(!confirm("In Papierkorb verschieben?")) return;
 
- let f = data[currentFirma];
+let f = data[currentFirma];
 
- if(!f.trash) f.trash = [];
+f.trash.push({
+name,
+data:JSON.parse(JSON.stringify(f.customers[name])),
+time:Date.now()
+});
 
- f.trash.push({
-  name:name,
-  data:f.customers[name],
-  deletedAt:Date.now()
- });
+delete f.customers[name];
 
- delete f.customers[name];
-
- save();
- render();
+save();
+render();
 }
 
-/* PAPIERKORB ANZEIGEN */
+/* ---------------- TRASH UI ---------------- */
+
 function openTrash(){
 
- document.getElementById("content").innerHTML = "";
+let f = data[currentFirma];
 
- let f = data[currentFirma];
+f.trash = f.trash.filter(t => Date.now() - t.time < 86400000);
 
- if(!f.trash) f.trash = [];
+let html = `<div class="card"><h3>🗑 Papierkorb</h3></div>`;
 
- let html = `<div class="card"><h3>🗑 Papierkorb</h3></div>`;
+f.trash.forEach((t,i)=>{
+html += `
+<div class="card">
+<b>${t.name}</b><br>
+<button onclick="restore(${i})">♻ Wiederherstellen</button>
+</div>
+`;
+});
 
- f.trash = f.trash.filter(x => {
-  return (Date.now() - x.deletedAt) < 86400000;
- });
-
- f.trash.forEach((t,i)=>{
-  html += `
-  <div class="card">
-
-  <b>${t.name}</b><br>
-
-  <button onclick="restore(${i})">♻ Wiederherstellen</button>
-
-  </div>
-  `;
- });
-
- document.getElementById("content").innerHTML = html;
+document.getElementById("list").innerHTML = html;
 }
 
 /* RESTORE */
 function restore(i){
 
- let f = data[currentFirma];
+let f = data[currentFirma];
 
- let item = f.trash[i];
+let item = f.trash[i];
 
- f.customers[item.name] = item.data;
+f.customers[item.name] = item.data;
 
- f.trash.splice(i,1);
+f.trash.splice(i,1);
 
- save();
- openTrash();
+save();
+openTrash();
 }
 
-/* BUTTON PAPIERKORB LADEN */
-document.getElementById("header").innerHTML += `
-<button onclick="openTrash()">🗑 Papierkorb</button>
+/* ---------------- STATS + WARN SYSTEM ---------------- */
+
+function render(){
+
+let f = data[currentFirma];
+let search = document.getElementById("search").value.toLowerCase();
+
+let list = document.getElementById("list");
+let stats = document.getElementById("stats");
+
+list.innerHTML="";
+
+let customers = f.customers;
+
+let total = 0;
+let redCount = 0;
+let orangeCount = 0;
+let greenCount = 0;
+
+for(let name in customers){
+
+let c = customers[name];
+
+if(search &&
+!name.toLowerCase().includes(search) &&
+!String(c.id).includes(search)) continue;
+
+let html = `<div class="card">
+<h3>${name}</h3>
+<b>ID ${c.id}</b><br><br>`;
+
+c.packages.forEach((p,i)=>{
+
+let status = getStatus(p);
+
+if(status==="red") redCount++;
+if(status==="orange") orangeCount++;
+if(status==="green") greenCount++;
+
+total++;
+
+html += `
+<div style="border-left:6px solid ${status};padding:5px;margin:5px 0;">
+<b>Paket ${i+1}</b><br>
+${p.size} | ${p.form}<br>
+${p.info || ""}
+<br>
+<button onclick="editPackage('${name}',${i})">✏</button>
+</div>
+`;
+});
+
+html += `
+<button onclick="deleteCustomer('${name}')">🗑 Löschen</button>
+</div>`;
+
+list.innerHTML += html;
+}
+
+/* ---------------- WARN BANNER ---------------- */
+
+let header = document.getElementById("header");
+header.classList.remove("warn");
+
+let warnText = "";
+
+if(redCount > 0){
+header.classList.add("warn");
+warnText = ` ⚠ ${redCount} überfällige Pakete`;
+}
+
+/* ---------------- STATS ---------------- */
+
+stats.innerHTML = `
+👥 Kunden: ${Object.keys(customers).length}<br>
+📦 Pakete: ${total}<br><br>
+
+🟢 Normal: ${greenCount}<br>
+🟡 Warnung: ${orangeCount}<br>
+🔴 Überfällig: ${redCount}<br><br>
+
+🗑 Papierkorb: ${f.trash.length || 0}
 `;
 
-</script>
-<script>
-
-/* 🔴 WERKTAGE ZÄHLEN */
-function workdays(start){
-
- let count = 0;
- let d = new Date(start);
-
- while(d.getTime() < Date.now()){
-
-  let day = d.getDay();
-
-  if(day !== 0 && day !== 6){
-   count++;
-  }
-
-  d.setDate(d.getDate() + 1);
- }
-
- return count;
-}
-
-/* STATUS CHECK */
-function getStatusColor(p){
-
- let days = workdays(p.time);
-
- if(days >= 10) return "red";
- if(days >= 8) return "orange";
- return "green";
-}
-
-/* STATISTIK ERWEITERT */
-function getStats(){
-
- let f = data[currentFirma];
-
- let customers = Object.keys(f.customers).length;
- let packages = 0;
-
- let red = 0, orange = 0, green = 0;
-
- for(let n in f.customers){
-  for(let p of f.customers[n].packages){
-   packages++;
-
-   let d = workdays(p.time);
-
-   if(d >= 10) red++;
-   else if(d >= 8) orange++;
-   else green++;
-  }
- }
-
- let trash = (f.trash ? f.trash.length : 0);
-
- return `
- 👥 Kunden: ${customers} <br>
- 📦 Pakete: ${packages} <br><br>
-
- 🟢 Normal: ${green} <br>
- 🟡 Warnung: ${orange} <br>
- 🔴 Überfällig: ${red} <br><br>
-
- 🗑 Papierkorb: ${trash}
- `;
-}
-
-/* WARNUNG OBEN */
-function checkWarning(){
-
- let f = data[currentFirma];
-
- let red = 0;
-
- for(let n in f.customers){
-  for(let p of f.customers[n].packages){
-   if(workdays(p.time) >= 10) red++;
-  }
- }
-
- let header = document.getElementById("header");
-
- if(red > 0){
-  header.style.background = "#b00000";
-  header.innerHTML = header.innerText + ` ⚠ ${red} überfällige Pakete`;
- }
-
-}
-
-/* RENDER FIX */
-let oldRender = render;
-
-render = function(){
-
- oldRender();
-
- checkWarning();
-
- let f = data[currentFirma];
-
- let list = document.getElementById("list");
-
- let cards = list.querySelectorAll(".card");
-
- let i = 0;
-
- for(let name in f.customers){
-
-  let c = f.customers[name];
-
-  let card = cards[i];
-
-  if(!card){ i++; continue; }
-
-  let items = card.querySelectorAll("div");
-
-  for(let p of items){
-   let color = getStatusColor({time:Date.now()});
-
-   p.style.borderLeft = "6px solid " + color;
-  }
-
-  i++;
- }
+/* Header Text bleibt stabil */
+document.getElementById("title").innerText = currentFirma.toUpperCase() + warnText;
 
 }
 
